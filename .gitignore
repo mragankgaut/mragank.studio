@@ -1,0 +1,42 @@
+# Environment & Secret Files
+.env
+.env.local
+.env.*.local
+.env.production
+secrets.json
+credentials.json
+private/
+config/
+
+# Version Control & Git
+.git/
+.gitconfig
+.github/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build & Dependencies
+node_modules/
+dist/
+build/
+*.log
+npm-debug.log*
+
+# System Files
+Thumbs.db
+desktop.ini
+
+# Backup Files
+*.bak
+*.backup
+*.tmp
+
+# Private
+private_notes/
+TODO_PRIVATE.md

@@ -1,0 +1,72 @@
+# Security Headers via .htaccess
+# Prevent directory listing
+Options -Indexes
+
+# Force HTTPS
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# Disable script execution in upload directories
+<FilesMatch "\.(php|phtml|php3|php4|php5|php6|php7|phps|pht|phar|shtml|sht)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Protect sensitive files
+<FilesMatch "^\.(?:env|git|htaccess)$|(?:composer\.(json|lock)|package\.(json|lock))$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order Allow,Deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Set proper file permissions
+<FilesMatch "^(?:wp-config|.env|secrets|credentials)\.php$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
+
+# Prevent access to config files
+<FilesMatch "(?:config|settings|database|secrets)\.(?:php|yml|yaml|env|json)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
+
+# Set Cache-Control headers
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 week"
+    ExpiresByType text/html "access plus 1 hour"
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+</IfModule>
+
+# Prevent access to version control directories
+<DirectoryMatch "^\.|/\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order Allow,Deny
+        Deny from all
+    </IfModule>
+</DirectoryMatch>
+
+# Disable TRACE HTTP method
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_METHOD} ^TRACE
+    RewriteRule .* - [F]
+</IfModule>

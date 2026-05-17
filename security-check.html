@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Headers Checker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+        h1 { 
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 30px;
+        }
+        .header-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+        .header-item.missing {
+            border-left-color: #ff6b6b;
+            background-color: #ffe0e0;
+        }
+        .header-item.present {
+            border-left-color: #51cf66;
+            background-color: #e6f7ed;
+        }
+        .header-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .header-value {
+            color: #666;
+            font-size: 13px;
+            font-family: monospace;
+            word-break: break-all;
+            margin-top: 5px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status.present {
+            background: #51cf66;
+            color: white;
+        }
+        .status.missing {
+            background: #ff6b6b;
+            color: white;
+        }
+        .summary {
+            background: #f0f7ff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            background: #ffe0e0;
+            color: #c41e3a;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border-left: 4px solid #c41e3a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 Security Headers Checker</h1>
+        <p class="subtitle">Test your website's security headers</p>
+        
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="urlInput" 
+                placeholder="Enter your website URL (e.g., https://example.com)"
+                value="https://mragank.studio"
+            >
+            <button onclick="checkHeaders()">Check Headers</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const SECURITY_HEADERS = {
+            'strict-transport-security': {
+                name: 'Strict-Transport-Security (HSTS)',
+                description: 'Enforces HTTPS connections',
+                required: true
+            },
+            'x-content-type-options': {
+                name: 'X-Content-Type-Options',
+                description: 'Prevents MIME type sniffing',
+                required: true
+            },
+            'x-frame-options': {
+                name: 'X-Frame-Options',
+                description: 'Prevents clickjacking attacks',
+                required: true
+            },
+            'x-xss-protection': {
+                name: 'X-XSS-Protection',
+                description: 'Browser-level XSS protection',
+                required: true
+            },
+            'content-security-policy': {
+                name: 'Content-Security-Policy',
+                description: 'Prevents XSS and other injection attacks',
+                required: true
+            },
+            'referrer-policy': {
+                name: 'Referrer-Policy',
+                description: 'Controls referrer information',
+                required: true
+            },
+            'permissions-policy': {
+                name: 'Permissions-Policy',
+                description: 'Controls browser features',
+                required: true
+            }
+        };
+
+        async function checkHeaders() {
+            const url = document.getElementById('urlInput').value.trim();
+            const resultsDiv = document.getElementById('results');
+            
+            if (!url) {
+                resultsDiv.innerHTML = '<div class="error">Please enter a valid URL</div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Checking headers...</div>';
+
+            try {
+                const response = await fetch(url, {
+                    method: 'HEAD',
+                    mode: 'no-cors',
+                    cache: 'no-cache'
+                });
+
+                // Note: CORS blocks direct header inspection in browsers
+                // This is a security feature. Use tools like securityheaders.com instead
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        ⚠️ <strong>Browser Limitation:</strong> Due to CORS security restrictions, headers cannot be checked directly from the browser.
+                        <br><br>
+                        <strong>Use these tools instead:</strong>
+                        <ul style="text-align: left; margin-top: 10px; display: inline-block;">
+                            <li>🔗 <a href="https://securityheaders.com" target="_blank">securityheaders.com</a></li>
+                            <li>🔗 <a href="https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor" target="_blank">Mozilla Observatory</a></li>
+                            <li>🔗 <a href="https://owasp.org/www-project-web-security-testing-guide/" target="_blank">OWASP Testing Guide</a></li>
+                        </ul>
+                        <br>Or use curl: <code style="background: #f5f5f5; padding: 5px;">curl -i ${url}</code>
+                    </div>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">Error checking headers: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Display expected headers on load
+        window.addEventListener('load', () => {
+            const resultsDiv = document.getElementById('results');
+            let html = '<div class="summary"><div class="score">Expected Security Headers</div></div>';
+            
+            Object.entries(SECURITY_HEADERS).forEach(([key, header]) => {
+                html += `
+                    <div class="header-item present">
+                        <div class="header-name">
+                            ${header.name}
+                            <span class="status present">✓ Implemented</span>
+                        </div>
+                        <div class="header-value">${header.description}</div>
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+        });
+
+        // Allow Enter key to check headers
+        document.getElementById('urlInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkHeaders();
+        });
+    </script>
+</body>
+</html>
