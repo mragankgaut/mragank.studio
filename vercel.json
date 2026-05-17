@@ -25,11 +25,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://unpkg.com https://calendly.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://calendly.com https://*.calendly.com; img-src 'self' data: https: blob:; frame-src 'self' https://calendly.com https://*.calendly.com; object-src 'none'; base-uri 'self'; form-action 'self' https://calendly.com; upgrade-insecure-requests"
+          "value": "geolocation=(), microphone=(), camera=(), payment=()"
         },
         {
           "key": "Cache-Control",
@@ -48,6 +44,15 @@
     },
     {
       "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    }
+  ]
+}
       "headers": [
         {
           "key": "Cache-Control",
